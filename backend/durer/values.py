@@ -21,7 +21,7 @@ def value_study(img: np.ndarray, levels: int = 4, seed: int = 0):
 
     gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
     # squinting at the subject: blur away the small stuff before grouping
-    gray = cv2.GaussianBlur(gray, (7, 7), 0)
+    gray = cv2.GaussianBlur(cv2.bilateralFilter(gray, 9, 30, 30), (7, 7), 0)
     flat = gray.reshape(-1, 1).astype(np.float32)
 
     rng = np.random.default_rng(seed)
@@ -32,7 +32,11 @@ def value_study(img: np.ndarray, levels: int = 4, seed: int = 0):
     # nearest center for every pixel, computed before the paper tone is brightened
     idx = np.abs(flat - centers[None, :]).argmin(axis=1)
     centers[-1] = max(centers[-1], PAPER_GRAY)
-    poster = centers[idx].reshape(gray.shape).astype(np.uint8)
+    # a median pass on the group map cleans up the speckle at the borders
+    # between tones, so each value reads as one shape
+    labels = cv2.medianBlur(idx.reshape(gray.shape).astype(np.uint8), 7)
+    idx = labels.ravel()
+    poster = centers[labels].astype(np.uint8)
 
     counts = np.bincount(idx, minlength=levels)
     total = counts.sum()

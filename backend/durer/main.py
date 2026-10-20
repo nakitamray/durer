@@ -5,7 +5,7 @@ from fastapi import FastAPI, File, Form, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import Response
 
-from . import contour, grid, imaging, pdf, shapes, values
+from . import blockin, contour, grid, imaging, pdf, shapes, values
 
 app = FastAPI(title="durer")
 
@@ -51,6 +51,21 @@ async def make_grid(
     return plan(img, paper_width, paper_height, cols, margin, unit).to_dict()
 
 
+@app.post("/blockin")
+async def make_blockin(image: UploadFile = File(...)):
+    img = await read_image(image)
+    return blockin.block_in(img)
+
+
+@app.post("/notan")
+async def make_notan(image: UploadFile = File(...), bias: int = Form(3)):
+    img = await read_image(image)
+    try:
+        return blockin.notan(img, bias)
+    except ValueError as e:
+        raise HTTPException(422, str(e)) from e
+
+
 @app.post("/shapes")
 async def make_shapes(image: UploadFile = File(...), simplicity: int = Form(3)):
     img = await read_image(image)
@@ -64,10 +79,9 @@ async def make_shapes(image: UploadFile = File(...), simplicity: int = Form(3)):
 async def make_contour(image: UploadFile = File(...), detail: int = Form(3)):
     img = await read_image(image)
     try:
-        lines = contour.line_drawing(img, detail)
+        return contour.line_drawing(img, detail)
     except ValueError as e:
         raise HTTPException(422, str(e)) from e
-    return Response(imaging.encode_png(lines), media_type="image/png")
 
 
 @app.post("/values")

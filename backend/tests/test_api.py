@@ -21,10 +21,24 @@ def test_grid(sample_png):
     assert body["rows"] == 3
 
 
-def test_contour_returns_png(sample_png):
+def test_contour_returns_strokes(sample_png):
     r = post("/contour", sample_png, detail=2)
     assert r.status_code == 200
-    assert r.content[:4] == b"\x89PNG"
+    assert r.json()["strokes"]
+
+
+def test_blockin(sample_png):
+    r = post("/blockin", sample_png)
+    assert r.status_code == 200
+    body = r.json()
+    assert len(body["placement"]["box"]) == 4
+    assert body["big"]
+
+
+def test_notan(sample_png):
+    r = post("/notan", sample_png, bias=3)
+    assert r.status_code == 200
+    assert 0 <= r.json()["shadow"] <= 1
 
 
 def test_values(sample_png):
