@@ -24,22 +24,28 @@
   })
 
   $effect(() => {
-    if (studio.step !== 2 || !studio.file) return
+    if (studio.current !== 'shapes' || !studio.file) return
+    void studio.simplicity
+    return debounce(() => studio.refreshShapes(), 200)
+  })
+
+  $effect(() => {
+    if (studio.current !== 'contour' || !studio.file) return
     void studio.detail
     return debounce(() => studio.refreshContour(), 200)
   })
 
   $effect(() => {
-    if (studio.step !== 3 || !studio.file) return
+    if (studio.current !== 'values' || !studio.file) return
     void studio.levels
     return debounce(() => studio.refreshValues(), 200)
   })
 
   let fadedOnce = false
   $effect(() => {
-    if (studio.step === 2 && !fadedOnce) {
+    if (studio.step >= 2 && !fadedOnce) {
       fadedOnce = true
-      studio.refOpacity = 0.3
+      studio.refOpacity = 0.4
     }
   })
 </script>

@@ -1,6 +1,7 @@
 <script lang="ts">
   import { studio } from './studio.svelte'
   import { line, rect, type Stroke } from './sketch'
+  import { outline } from './shapes'
 
   const w = $derived(studio.size.w)
   const h = $derived(studio.size.h)
@@ -38,11 +39,21 @@
   })
 
   const overlay = $derived(
-    studio.step === 2 ? studio.contour : studio.step === 3 ? studio.values?.image : null,
+    studio.current === 'contour'
+      ? studio.contour
+      : studio.current === 'values'
+        ? studio.values?.image
+        : null,
   )
   const gridOn = $derived(studio.step >= 1 && studio.showGrid)
-  // the reference fades back so the line drawing can show through
+  // the reference fades back so whatever's drawn on top can show through
   const refOpacity = $derived(studio.step >= 2 ? studio.refOpacity : 1)
+
+  const study = $derived(studio.current === 'shapes' ? studio.shapes : null)
+  const shapeScale = $derived(study ? w / study.width : 1)
+  const shapeStrokes = $derived(
+    study ? study.shapes.map((s, i) => outline(s, i + 1, 1.6 * unit / shapeScale)) : [],
+  )
 
   function selectCell(e: MouseEvent) {
     if (!g || studio.step < 1) return
@@ -58,6 +69,28 @@
   <img class="ref" src={studio.src} alt="your reference" style:opacity={refOpacity} />
   {#if overlay}
     <img class="overlay" src={overlay} alt="" />
+  {/if}
+
+  {#if study}
+    <svg viewBox="0 0 {w} {h}" preserveAspectRatio="none" class="shapes" aria-hidden="true">
+      <g transform="scale({shapeScale})">
+        {#each study.shapes.slice(0, studio.shown) as s, i}
+          <g class:newest={i === studio.shown - 1}>
+            {#each shapeStrokes[i] as p}
+              <path d={p.d} stroke={p.stroke} stroke-width={p.width} fill="none" />
+            {/each}
+          </g>
+        {/each}
+      </g>
+    </svg>
+    <div class="numbers" aria-hidden="true">
+      {#each study.shapes.slice(0, studio.shown) as s, i}
+        <span
+          style:left="{(s.center[0] / study.width) * 100}%"
+          style:top="{(s.center[1] / study.height) * 100}%">{i + 1}</span
+        >
+      {/each}
+    </div>
   {/if}
 
   {#if gridOn && g}
@@ -106,6 +139,22 @@
   svg {
     cursor: crosshair;
     overflow: visible;
+  }
+  svg.shapes {
+    pointer-events: none;
+    color: var(--ink);
+  }
+  .newest {
+    color: var(--sanguine);
+  }
+  .numbers span {
+    position: absolute;
+    transform: translate(-50%, -50%);
+    font-family: var(--hand);
+    font-size: 1.3rem;
+    color: var(--sanguine);
+    text-shadow: 0 0 4px var(--paper-light), 0 0 2px var(--paper-light);
+    pointer-events: none;
   }
   .grid {
     color: var(--grid-line);

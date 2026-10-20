@@ -1,17 +1,19 @@
 <script lang="ts">
   import CellView from './CellView.svelte'
   import ToneKey from './ToneKey.svelte'
-  import { length } from './format'
+  import { length, percent } from './format'
+  import { describe } from './shapes'
   import { PAPERS } from './papers'
   import { studio } from './studio.svelte'
 
   const g = $derived(studio.grid)
   const paperIndex = $derived(PAPERS.findIndex((p) => p.label === studio.paper.label))
   const DETAIL = ['very loose', 'loose', 'balanced', 'detailed', 'every line']
+  const SIMPLICITY = ['lots of pieces', 'more pieces', 'balanced', 'fewer pieces', 'just the masses']
 </script>
 
 <aside>
-  {#if studio.step === 0}
+  {#if studio.current === 'setup'}
     <h2>Your paper</h2>
     <label class="field">
       <span>Size</span>
@@ -40,7 +42,7 @@
       inches or centimetres on that paper.
     </p>
     <button class="next" onclick={() => (studio.step = 1)}>On to the grid →</button>
-  {:else if studio.step === 1}
+  {:else if studio.current === 'grid'}
     <h2>The grid</h2>
     <label class="field">
       <span>Squares across <b>{studio.cols}</b></span>
@@ -60,7 +62,48 @@
     </p>
     <button class="link" onclick={() => studio.downloadPdf()}>print this grid (pdf)</button>
     <CellView />
-  {:else if studio.step === 2}
+  {:else if studio.current === 'shapes'}
+    <h2>Big shapes</h2>
+    <label class="field">
+      <span>Simplicity <i>{SIMPLICITY[studio.simplicity - 1]}</i></span>
+      <input type="range" min="1" max="5" bind:value={studio.simplicity} />
+    </label>
+
+    {#if studio.shapes}
+      {@const list = studio.shapes.shapes}
+      {#if list.length}
+        <label class="field">
+          <span>Showing <b>{studio.shown} of {list.length}</b></span>
+          <input type="range" min="1" max={list.length} bind:value={studio.shown} />
+        </label>
+        <ol class="shapes">
+          {#each list as s, i}
+            <li class:hidden={i >= studio.shown}>
+              <button onclick={() => (studio.shown = i + 1)}>
+                <span class="n">{i + 1}</span>
+                <span>{describe(s)}</span>
+                <span class="share">{percent(s.share)}</span>
+              </button>
+            </li>
+          {/each}
+        </ol>
+      {:else}
+        <p class="note">nothing big enough stood out. try a lower simplicity</p>
+      {/if}
+    {/if}
+
+    <label class="field">
+      <span>Photo underneath</span>
+      <input type="range" min="0" max="1" step="0.05" bind:value={studio.refOpacity} />
+    </label>
+    <label class="check">
+      <input type="checkbox" bind:checked={studio.showGrid} /> show grid
+    </label>
+    <p class="tip">
+      Block these in first, biggest to smallest, with light loose strokes. Don't worry about edges
+      yet. If the big shapes are in the right place and the right size, the rest follows.
+    </p>
+  {:else if studio.current === 'contour'}
     <h2>Main lines</h2>
     <label class="field">
       <span>Detail <i>{DETAIL[studio.detail - 1]}</i></span>
@@ -191,6 +234,37 @@
   .next:hover {
     background: var(--ink);
     color: var(--paper);
+  }
+  .shapes {
+    list-style: none;
+    margin: 0 0 1rem;
+    padding: 0;
+    max-height: 15rem;
+    overflow-y: auto;
+  }
+  .shapes button {
+    display: grid;
+    grid-template-columns: 1.8rem 1fr auto;
+    width: 100%;
+    padding: 0.25rem 0;
+    border: 0;
+    border-bottom: 1px solid var(--rule);
+    background: none;
+    color: var(--ink);
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+  }
+  .shapes .hidden button {
+    color: var(--faint);
+  }
+  .shapes .n {
+    font-family: var(--hand);
+    color: var(--sanguine);
+  }
+  .shapes .share {
+    color: var(--graphite);
+    font-size: 0.85rem;
   }
   .levels {
     display: flex;

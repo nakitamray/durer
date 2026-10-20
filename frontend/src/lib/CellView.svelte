@@ -16,7 +16,11 @@
     const cell = studio.cell
     const src = studio.src
     const overlay =
-      studio.step === 2 ? studio.contour : studio.step === 3 ? studio.values?.image : null
+      studio.current === 'contour'
+        ? studio.contour
+        : studio.current === 'values'
+          ? studio.values?.image
+          : null
     const refOpacity = studio.step >= 2 ? studio.refOpacity : 1
     const el = canvas
     if (!g || !cell || !src || !el) return

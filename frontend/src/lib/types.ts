@@ -36,3 +36,23 @@ export interface Cell {
   col: number
   row: number
 }
+
+export interface Shape {
+  kind: 'ellipse' | 'box' | 'triangle' | 'polygon'
+  fit: number
+  share: number
+  center: [number, number]
+  points?: [number, number][]
+  cx?: number
+  cy?: number
+  rx?: number
+  ry?: number
+  angle?: number
+}
+
+export interface ShapeStudy {
+  width: number
+  height: number
+  drawing: boolean
+  shapes: Shape[]
+}

@@ -1,4 +1,4 @@
-import type { Grid, Paper, ValueStudy } from './types'
+import type { Grid, Paper, ShapeStudy, ValueStudy } from './types'
 
 const BASE = import.meta.env.VITE_API_URL || '/api'
 
@@ -35,6 +35,11 @@ function paperFields(paper: Paper, cols: number) {
 
 export async function getGrid(file: File, paper: Paper, cols: number): Promise<Grid> {
   const res = await post('/grid', file, paperFields(paper, cols))
+  return res.json()
+}
+
+export async function getShapes(file: File, simplicity: number): Promise<ShapeStudy> {
+  const res = await post('/shapes', file, { simplicity })
   return res.json()
 }
 

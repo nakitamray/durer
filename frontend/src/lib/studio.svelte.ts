@@ -1,13 +1,16 @@
 import * as api from './api'
 import { PAPERS } from './papers'
-import type { Cell, Grid, Paper, ValueStudy } from './types'
+import type { Cell, Grid, Paper, ShapeStudy, ValueStudy } from './types'
 
 export const STEPS = [
-  { numeral: 'I', name: 'Mise en place', sub: 'the subject & paper' },
-  { numeral: 'II', name: 'La grille', sub: 'boxing it in' },
-  { numeral: 'III', name: 'Le contour', sub: 'the main lines' },
-  { numeral: 'IV', name: 'Les valeurs', sub: 'light to dark' },
-]
+  { key: 'setup', numeral: 'I', name: 'Mise en place', sub: 'the subject & paper' },
+  { key: 'grid', numeral: 'II', name: 'La grille', sub: 'boxing it in' },
+  { key: 'shapes', numeral: 'III', name: 'Les formes', sub: 'the big shapes' },
+  { key: 'contour', numeral: 'IV', name: 'Le contour', sub: 'the main lines' },
+  { key: 'values', numeral: 'V', name: 'Les valeurs', sub: 'light to dark' },
+] as const
+
+export type StepKey = (typeof STEPS)[number]['key']
 
 class Studio {
   file = $state<File | null>(null)
@@ -15,12 +18,17 @@ class Studio {
   size = $state({ w: 0, h: 0 })
 
   step = $state(0)
+  current: StepKey = $derived(STEPS[this.step].key)
   paper = $state<Paper>(PAPERS[2])
   cols = $state(6)
   grid = $state<Grid | null>(null)
   showGrid = $state(true)
   refOpacity = $state(1)
   cell = $state<Cell | null>(null)
+
+  simplicity = $state(3)
+  shapes = $state<ShapeStudy | null>(null)
+  shown = $state(0)
 
   detail = $state(3)
   contour = $state<string | null>(null)
@@ -31,10 +39,11 @@ class Studio {
   error = $state<string | null>(null)
 
   // results are cached by the settings that made them
+  private shapesKey = ''
   private contourKey = ''
   private valuesKey = ''
   private requestId = 0
-  private latest = { grid: 0, contour: 0, values: 0 }
+  private latest = { grid: 0, shapes: 0, contour: 0, values: 0 }
 
   async load(file: File) {
     const src = URL.createObjectURL(file)
@@ -55,7 +64,8 @@ class Studio {
     this.size = { w: img.naturalWidth, h: img.naturalHeight }
     this.contour = null
     this.values = null
-    this.contourKey = this.valuesKey = ''
+    this.shapes = null
+    this.shapesKey = this.contourKey = this.valuesKey = ''
     this.dropPending()
     this.grid = null
     this.cell = null
@@ -79,7 +89,8 @@ class Studio {
     if (this.src) URL.revokeObjectURL(this.src)
     if (this.contour) URL.revokeObjectURL(this.contour)
     this.file = this.src = this.contour = this.values = this.grid = this.cell = null
-    this.contourKey = this.valuesKey = ''
+    this.shapes = null
+    this.shapesKey = this.contourKey = this.valuesKey = ''
     this.dropPending()
     this.step = 0
   }
@@ -94,6 +105,19 @@ class Studio {
       if (this.cell && (this.cell.col >= this.grid.cols || this.cell.row >= this.grid.rows)) {
         this.cell = null
       }
+    })
+  }
+
+  async refreshShapes() {
+    const key = `${this.src}:${this.simplicity}`
+    if (!this.file || key === this.shapesKey) return
+    const n = ++this.latest.shapes
+    await this.run(async () => {
+      const shapes = await api.getShapes(this.file!, this.simplicity)
+      if (n !== this.latest.shapes) return
+      this.shapes = shapes
+      this.shown = shapes.shapes.length
+      this.shapesKey = key
     })
   }
 
@@ -138,6 +162,7 @@ class Studio {
   // anything still in flight belongs to the old image
   private dropPending() {
     this.latest.grid++
+    this.latest.shapes++
     this.latest.contour++
     this.latest.values++
   }
