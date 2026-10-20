@@ -5,7 +5,7 @@ from fastapi import FastAPI, File, Form, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import Response
 
-from . import contour, grid, imaging, pdf, values
+from . import contour, grid, imaging, pdf, shapes, values
 
 app = FastAPI(title="durer")
 
@@ -49,6 +49,15 @@ async def make_grid(
 ):
     img = await read_image(image)
     return plan(img, paper_width, paper_height, cols, margin, unit).to_dict()
+
+
+@app.post("/shapes")
+async def make_shapes(image: UploadFile = File(...), simplicity: int = Form(3)):
+    img = await read_image(image)
+    try:
+        return shapes.find_shapes(img, simplicity)
+    except ValueError as e:
+        raise HTTPException(422, str(e)) from e
 
 
 @app.post("/contour")

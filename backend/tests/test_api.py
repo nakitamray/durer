@@ -49,3 +49,11 @@ def test_not_an_image():
 def test_bad_params(sample_png):
     r = post("/grid", sample_png, cols=0)
     assert r.status_code == 422
+
+
+def test_shapes(sample_png):
+    r = post("/shapes", sample_png, simplicity=3)
+    assert r.status_code == 200
+    body = r.json()
+    assert body["width"] > 0
+    assert isinstance(body["shapes"], list)
