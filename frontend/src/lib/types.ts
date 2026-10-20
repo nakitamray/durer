@@ -56,3 +56,41 @@ export interface ShapeStudy {
   drawing: boolean
   shapes: Shape[]
 }
+
+export type Point = [number, number]
+
+export interface InkStroke {
+  d: string
+  length: number
+  weight: number
+}
+
+export interface ContourStudy {
+  width: number
+  height: number
+  drawing: boolean
+  strokes: InkStroke[]
+}
+
+export interface Placement {
+  box: [number, number, number, number]
+  center: Point
+  axis: [Point, Point]
+  lean: number
+}
+
+export interface BlockIn {
+  width: number
+  height: number
+  drawing: boolean
+  placement: Placement
+  big: Point[][]
+  medium: Point[][]
+}
+
+export interface Notan {
+  width: number
+  height: number
+  path: string
+  shadow: number
+}

@@ -1,6 +1,7 @@
 import type { Unit } from './types'
 
-const EIGHTHS = ['', '⅛', '¼', '⅜', '½', '⅝', '¾', '⅞']
+// plain fractions, so they read the same in the handwriting and the serif
+const EIGHTHS = ['', '1/8', '1/4', '3/8', '1/2', '5/8', '3/4', '7/8']
 
 // artists measure in fractions, not decimals
 export function length(value: number, unit: Unit): string {

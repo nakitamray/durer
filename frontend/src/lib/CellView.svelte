@@ -3,7 +3,7 @@
   import { length } from './format'
 
   let canvas = $state<HTMLCanvasElement>()
-  const SIZE = 220
+  const SIZE = 240
 
   function loadImage(src: string) {
     const img = new Image()
@@ -15,25 +15,23 @@
     const g = studio.grid
     const cell = studio.cell
     const src = studio.src
-    const overlay =
-      studio.current === 'contour'
-        ? studio.contour
-        : studio.current === 'values'
-          ? studio.values?.image
-          : null
-    const refOpacity = studio.step >= 2 ? studio.refOpacity : 1
     const el = canvas
+    const step = studio.current
+    const raster = step === 'values' ? studio.values?.image : null
+    const contour = step === 'contour' ? studio.contour : null
+    const notan = step === 'notan' ? studio.notan : null
+    const refOpacity = step === 'grid' ? 1 : studio.refOpacity
     if (!g || !cell || !src || !el) return
 
     let cancelled = false
-    Promise.all([loadImage(src), overlay ? loadImage(overlay) : null]).then(([ref, top]) => {
+    Promise.all([loadImage(src), raster ? loadImage(raster) : null]).then(([ref, top]) => {
       if (cancelled) return
       const ctx = el.getContext('2d')!
       const aspect = g.cell_height / g.cell_width
       el.width = SIZE * 2
       el.height = Math.round(SIZE * 2 * aspect)
-
-      ctx.fillStyle = '#f7f2e8'
+      ctx.setTransform(1, 0, 0, 1, 0, 0)
+      ctx.fillStyle = '#f4ecdc'
       ctx.fillRect(0, 0, el.width, el.height)
 
       const crop = (img: HTMLImageElement) => {
@@ -46,8 +44,32 @@
       ctx.globalAlpha = 1
       if (top) crop(top)
 
+      // vector layers: zoom the working-size coordinates onto this one square
+      const zoom = (width: number, height: number) => {
+        const sx = el.width / (width / g.cols)
+        const sy = el.height / (height / g.rows)
+        ctx.setTransform(sx, 0, 0, sy, (-cell.col * width * sx) / g.cols, (-cell.row * height * sy) / g.rows)
+        return sx
+      }
+      ctx.strokeStyle = ctx.fillStyle = '#24180f'
+      ctx.lineCap = ctx.lineJoin = 'round'
+      if (contour) {
+        const s = zoom(contour.width, contour.height)
+        for (const stroke of contour.strokes) {
+          ctx.lineWidth = (stroke.weight * 2.2) / s
+          ctx.stroke(new Path2D(stroke.d))
+        }
+      }
+      if (notan) {
+        zoom(notan.width, notan.height)
+        ctx.globalAlpha = 0.8
+        ctx.fill(new Path2D(notan.path), 'evenodd')
+        ctx.globalAlpha = 1
+      }
+      ctx.setTransform(1, 0, 0, 1, 0, 0)
+
       // halfway marks, the same ones you'd sketch in faintly
-      ctx.strokeStyle = 'rgba(164, 85, 58, 0.45)'
+      ctx.strokeStyle = 'rgba(142, 59, 34, 0.5)'
       ctx.setLineDash([6, 8])
       ctx.lineWidth = 1.5
       ctx.beginPath()
@@ -56,6 +78,7 @@
       ctx.moveTo(0, el.height / 2)
       ctx.lineTo(el.width, el.height / 2)
       ctx.stroke()
+      ctx.setLineDash([])
     })
 
     return () => {
@@ -81,26 +104,28 @@
 
 <style>
   .cell {
-    margin-top: 0.5rem;
+    margin-top: 0.8rem;
   }
   .name {
     margin: 0 0 0.4rem;
     font-family: var(--display);
     font-style: italic;
-    font-size: 1.25rem;
+    font-size: 1.3rem;
   }
   canvas {
     display: block;
     max-width: 100%;
     height: auto;
-    box-shadow: 0 0 0 1px var(--rule);
+    box-shadow: 0 10px 18px -12px rgb(40 22 8 / 0.6);
+    transform: rotate(0.6deg);
   }
   .note,
   .empty {
     font-family: var(--hand);
+    -webkit-text-stroke: 0.45px currentColor;
     color: var(--graphite);
-    font-size: 1.05rem;
-    line-height: 1.5;
+    font-size: 1.6rem;
+    line-height: 1.3;
   }
   .empty {
     color: var(--faint);

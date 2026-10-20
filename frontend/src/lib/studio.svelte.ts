@@ -1,16 +1,30 @@
 import * as api from './api'
 import { PAPERS } from './papers'
-import type { Cell, Grid, Paper, ShapeStudy, ValueStudy } from './types'
+import type {
+  BlockIn,
+  Cell,
+  ContourStudy,
+  Grid,
+  Notan,
+  Paper,
+  ShapeStudy,
+  ValueStudy,
+} from './types'
 
 export const STEPS = [
-  { key: 'setup', numeral: 'I', name: 'Mise en place', sub: 'the subject & paper' },
+  { key: 'setup', numeral: 'I', name: 'Mise en place', sub: 'the subject and paper' },
   { key: 'grid', numeral: 'II', name: 'La grille', sub: 'boxing it in' },
-  { key: 'shapes', numeral: 'III', name: 'Les formes', sub: 'the big shapes' },
-  { key: 'contour', numeral: 'IV', name: 'Le contour', sub: 'the main lines' },
-  { key: 'values', numeral: 'V', name: 'Les valeurs', sub: 'light to dark' },
+  { key: 'place', numeral: 'III', name: "L'emplacement", sub: 'where it sits' },
+  { key: 'big', numeral: 'IV', name: 'Grandes formes', sub: 'big shapes' },
+  { key: 'medium', numeral: 'V', name: 'Formes moyennes', sub: 'medium shapes' },
+  { key: 'notan', numeral: 'VI', name: 'Le notan', sub: 'light and shadow' },
+  { key: 'contour', numeral: 'VII', name: 'Le contour', sub: 'the real lines' },
+  { key: 'values', numeral: 'VIII', name: 'Les valeurs', sub: 'modeling the tones' },
 ] as const
 
 export type StepKey = (typeof STEPS)[number]['key']
+
+type Job = 'grid' | 'blockin' | 'shapes' | 'notan' | 'contour' | 'values'
 
 class Studio {
   file = $state<File | null>(null)
@@ -19,31 +33,45 @@ class Studio {
 
   step = $state(0)
   current: StepKey = $derived(STEPS[this.step].key)
+
   paper = $state<Paper>(PAPERS[2])
   cols = $state(6)
   grid = $state<Grid | null>(null)
   showGrid = $state(true)
   refOpacity = $state(1)
+  ghost = $state(true)
   cell = $state<Cell | null>(null)
 
+  blockin = $state<BlockIn | null>(null)
+  solids = $state(false)
   simplicity = $state(3)
   shapes = $state<ShapeStudy | null>(null)
-  shown = $state(0)
+
+  bias = $state(3)
+  hatched = $state(true)
+  notan = $state<Notan | null>(null)
 
   detail = $state(3)
-  contour = $state<string | null>(null)
+  contour = $state<ContourStudy | null>(null)
+
   levels = $state(4)
   values = $state<ValueStudy | null>(null)
 
   loading = $state(false)
   error = $state<string | null>(null)
 
-  // results are cached by the settings that made them
-  private shapesKey = ''
-  private contourKey = ''
-  private valuesKey = ''
-  private requestId = 0
-  private latest = { grid: 0, shapes: 0, contour: 0, values: 0 }
+  // each result is cached under the settings that produced it, and each kind
+  // of request has a counter so a slow old answer can't overwrite a newer one
+  private keys: Partial<Record<Job, string>> = {}
+  private latest: Record<Job, number> = {
+    grid: 0,
+    blockin: 0,
+    shapes: 0,
+    notan: 0,
+    contour: 0,
+    values: 0,
+  }
+  private pending = 0
 
   async load(file: File) {
     const src = URL.createObjectURL(file)
@@ -57,126 +85,120 @@ class Studio {
       return
     }
 
-    if (this.src) URL.revokeObjectURL(this.src)
-    if (this.contour) URL.revokeObjectURL(this.contour)
+    this.clear()
     this.file = file
     this.src = src
     this.size = { w: img.naturalWidth, h: img.naturalHeight }
-    this.contour = null
-    this.values = null
-    this.shapes = null
-    this.shapesKey = this.contourKey = this.valuesKey = ''
-    this.dropPending()
-    this.grid = null
-    this.cell = null
-    this.error = null
-
     // turn the paper to match the subject
-    const landscape = img.naturalWidth > img.naturalHeight
-    this.paper = orient(this.paper, landscape)
+    this.paper = orient(this.paper, img.naturalWidth > img.naturalHeight)
+  }
+
+  reset() {
+    this.clear()
+    this.file = null
+    this.step = 0
+  }
+
+  private clear() {
+    if (this.src) URL.revokeObjectURL(this.src)
+    this.src = null
+    this.grid = this.cell = null
+    this.blockin = this.shapes = this.notan = this.contour = this.values = null
+    this.keys = {}
+    this.error = null
+    // anything still in flight belongs to the old image
+    for (const k of Object.keys(this.latest) as Job[]) this.latest[k]++
   }
 
   setPaper(p: Paper) {
-    const landscape = this.size.w > this.size.h
-    this.paper = orient(p, landscape)
+    this.paper = orient(p, this.size.w > this.size.h)
   }
 
   rotatePaper() {
     this.paper = { ...this.paper, width: this.paper.height, height: this.paper.width }
   }
 
-  reset() {
-    if (this.src) URL.revokeObjectURL(this.src)
-    if (this.contour) URL.revokeObjectURL(this.contour)
-    this.file = this.src = this.contour = this.values = this.grid = this.cell = null
-    this.shapes = null
-    this.shapesKey = this.contourKey = this.valuesKey = ''
-    this.dropPending()
-    this.step = 0
-  }
-
-  async refreshGrid() {
-    if (!this.file) return
-    const n = ++this.latest.grid
-    await this.run(async () => {
-      const grid = await api.getGrid(this.file!, this.paper, this.cols)
-      if (n !== this.latest.grid) return
-      this.grid = grid
-      if (this.cell && (this.cell.col >= this.grid.cols || this.cell.row >= this.grid.rows)) {
-        this.cell = null
+  refreshGrid() {
+    return this.fetch('grid', `${this.paper.label}:${this.paper.width}:${this.cols}`, async (f) => {
+      const grid = await api.getGrid(f, this.paper, this.cols)
+      return () => {
+        this.grid = grid
+        if (this.cell && (this.cell.col >= grid.cols || this.cell.row >= grid.rows)) {
+          this.cell = null
+        }
       }
     })
   }
 
-  async refreshShapes() {
-    const key = `${this.src}:${this.simplicity}`
-    if (!this.file || key === this.shapesKey) return
-    const n = ++this.latest.shapes
-    await this.run(async () => {
-      const shapes = await api.getShapes(this.file!, this.simplicity)
-      if (n !== this.latest.shapes) return
-      this.shapes = shapes
-      this.shown = shapes.shapes.length
-      this.shapesKey = key
+  refreshBlockIn() {
+    return this.fetch('blockin', '', async (f) => {
+      const b = await api.getBlockIn(f)
+      return () => (this.blockin = b)
     })
   }
 
-  async refreshContour() {
-    const key = `${this.src}:${this.detail}`
-    if (!this.file || key === this.contourKey) return
-    const n = ++this.latest.contour
-    await this.run(async () => {
-      const url = await api.getContour(this.file!, this.detail)
-      if (n !== this.latest.contour) return URL.revokeObjectURL(url)
-      if (this.contour) URL.revokeObjectURL(this.contour)
-      this.contour = url
-      this.contourKey = key
+  refreshShapes() {
+    return this.fetch('shapes', `${this.simplicity}`, async (f) => {
+      const s = await api.getShapes(f, this.simplicity)
+      return () => (this.shapes = s)
     })
   }
 
-  async refreshValues() {
-    const key = `${this.src}:${this.levels}`
-    if (!this.file || key === this.valuesKey) return
-    const n = ++this.latest.values
-    await this.run(async () => {
-      const values = await api.getValues(this.file!, this.levels)
-      if (n !== this.latest.values) return
-      this.values = values
-      this.valuesKey = key
+  refreshNotan() {
+    return this.fetch('notan', `${this.bias}`, async (f) => {
+      const n = await api.getNotan(f, this.bias)
+      return () => (this.notan = n)
+    })
+  }
+
+  refreshContour() {
+    return this.fetch('contour', `${this.detail}`, async (f) => {
+      const c = await api.getContour(f, this.detail)
+      return () => (this.contour = c)
+    })
+  }
+
+  refreshValues() {
+    return this.fetch('values', `${this.levels}`, async (f) => {
+      const v = await api.getValues(f, this.levels)
+      return () => (this.values = v)
     })
   }
 
   async downloadPdf() {
     if (!this.file) return
-    await this.run(async () => {
-      const blob = await api.getPdf(this.file!, this.paper, this.cols)
+    this.pending++
+    this.loading = true
+    try {
+      const blob = await api.getPdf(this.file, this.paper, this.cols)
       const url = URL.createObjectURL(blob)
       const a = document.createElement('a')
       a.href = url
       a.download = 'durer-grid.pdf'
       a.click()
       URL.revokeObjectURL(url)
-    })
-  }
-
-  // anything still in flight belongs to the old image
-  private dropPending() {
-    this.latest.grid++
-    this.latest.shapes++
-    this.latest.contour++
-    this.latest.values++
-  }
-
-  private async run(fn: () => Promise<void>) {
-    const id = ++this.requestId
-    this.loading = true
-    this.error = null
-    try {
-      await fn()
     } catch (e) {
       this.error = e instanceof Error ? e.message : String(e)
     } finally {
-      if (id === this.requestId) this.loading = false
+      this.loading = --this.pending > 0
+    }
+  }
+
+  private async fetch(job: Job, key: string, run: (f: File) => Promise<() => void>) {
+    if (!this.file || this.keys[job] === key) return
+    const n = ++this.latest[job]
+    this.pending++
+    this.loading = true
+    this.error = null
+    try {
+      const apply = await run(this.file)
+      if (n !== this.latest[job]) return
+      apply()
+      this.keys[job] = key
+    } catch (e) {
+      if (n === this.latest[job]) this.error = e instanceof Error ? e.message : String(e)
+    } finally {
+      this.loading = --this.pending > 0
     }
   }
 }
