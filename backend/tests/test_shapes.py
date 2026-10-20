@@ -2,7 +2,8 @@ import cv2
 import numpy as np
 import pytest
 
-from durer.shapes import classify, find_shapes, is_drawing
+from durer.marks import is_drawing
+from durer.shapes import classify, find_shapes
 
 
 def outline(mask):

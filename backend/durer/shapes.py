@@ -12,6 +12,8 @@ import cv2
 import numpy as np
 from sklearn.cluster import KMeans
 
+from . import marks
+
 WORK_SIDE = 480
 
 # simplicity -> (smallest region as a share of the picture, polygon tolerance, fit needed)
@@ -26,23 +28,6 @@ SIMPLICITY = {
 MAX_SHAPES = 30
 # anything bigger than this is background (wall, sky, table), not a shape
 MAX_REGION = 0.45
-
-
-def _shrink(img: np.ndarray) -> np.ndarray:
-    h, w = img.shape[:2]
-    scale = WORK_SIDE / max(h, w)
-    if scale >= 1:
-        return img
-    return cv2.resize(img, (round(w * scale), round(h * scale)), interpolation=cv2.INTER_AREA)
-
-
-def is_drawing(img: np.ndarray) -> bool:
-    """Pencil or ink on paper: mostly light, and one color throughout
-    (the paper can be tinted, like old sepia sheets)."""
-    lab = cv2.cvtColor(img, cv2.COLOR_BGR2LAB).astype(np.float32)
-    chroma = np.hypot(lab[..., 1] - 128, lab[..., 2] - 128)
-    spread = float(np.percentile(chroma, 95) - np.median(chroma))
-    return spread < 10 and float(np.median(lab[..., 0])) > 150
 
 
 def _color_masks(img: np.ndarray, groups: int, seed: int):
@@ -62,14 +47,7 @@ SMUDGE = {1: 0.007, 2: 0.011, 3: 0.016, 4: 0.022, 5: 0.03}
 def _ink_masks(img: np.ndarray, simplicity: int):
     """Where the marks are dense. Lines on their own aren't shapes, but a
     cluster of them is a mass you'd block in."""
-    gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-    h, w = gray.shape
-    # paper isn't evenly lit, so measure ink against the local paper tone
-    k = (max(h, w) // 20) | 1
-    paper = cv2.morphologyEx(gray, cv2.MORPH_CLOSE, np.ones((k, k), np.uint8))
-    ink = cv2.subtract(paper, gray)
-    density = cv2.GaussianBlur(ink.astype(np.float32), (0, 0), max(h, w) * SMUDGE[simplicity])
-    density = cv2.normalize(density, None, 0, 255, cv2.NORM_MINMAX).astype(np.uint8)
+    density = marks.density(cv2.cvtColor(img, cv2.COLOR_BGR2GRAY), SMUDGE[simplicity])
     _, mask = cv2.threshold(density, 0, 1, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
     return [mask]
 
@@ -128,10 +106,10 @@ def find_shapes(img: np.ndarray, simplicity: int = 3, groups: int = 5, seed: int
         raise ValueError("simplicity must be 1-5")
     min_share, tolerance, needed = SIMPLICITY[simplicity]
 
-    small = _shrink(img)
+    small = marks.shrink(img, WORK_SIDE)
     h, w = small.shape[:2]
     total = h * w
-    drawing = is_drawing(small)
+    drawing = marks.is_drawing(small)
     masks = _ink_masks(small, simplicity) if drawing else _color_masks(small, groups, seed)
 
     k = max(3, round(min(h, w) * 0.012)) | 1
