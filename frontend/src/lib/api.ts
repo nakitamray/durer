@@ -4,6 +4,18 @@ const BASE = import.meta.env.VITE_API_URL || '/api'
 
 const MARGIN = { in: 0.5, cm: 1.5 }
 
+export const OFFLINE =
+  "Can't reach the drawing server. Start it with .\\dev.ps1 (or check its window for an error)."
+
+export async function healthy(): Promise<boolean> {
+  try {
+    const res = await fetch(BASE + '/health')
+    return res.ok
+  } catch {
+    return false
+  }
+}
+
 async function post(path: string, file: File, fields: Record<string, string | number>) {
   const form = new FormData()
   form.append('image', file)
@@ -13,10 +25,12 @@ async function post(path: string, file: File, fields: Record<string, string | nu
   try {
     res = await fetch(BASE + path, { method: 'POST', body: form })
   } catch {
-    throw new Error("Can't reach the server. Is the API running?")
+    throw new Error(OFFLINE)
   }
   if (!res.ok) {
     const body = await res.json().catch(() => null)
+    // the dev proxy answers with a bare 5xx when nothing is listening behind it
+    if (!body && res.status >= 500) throw new Error(OFFLINE)
     const detail = typeof body?.detail === 'string' ? body.detail : `request failed (${res.status})`
     throw new Error(detail)
   }
