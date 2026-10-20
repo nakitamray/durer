@@ -59,7 +59,7 @@
   .drop {
     position: relative;
     display: block;
-    width: min(340px, 100%);
+    width: min(380px, 100%);
     margin: 0 auto;
     padding: 0;
     border: 0;
@@ -88,19 +88,21 @@
     text-align: center;
   }
   .title {
-    font-family: var(--display);
-    font-style: italic;
-    font-size: 1.7rem;
+    font-family: var(--script);
+    font-size: 2.9rem;
+    line-height: 1;
   }
   .hint {
+    font-family: var(--script);
     color: var(--graphite);
-    font-size: 0.95rem;
+    font-size: 1.7rem;
+    line-height: 1.15;
   }
   .note {
     margin-top: 0.6rem;
-    font-family: var(--hand);
+    font-family: var(--script);
     -webkit-text-stroke: 0.45px currentColor;
-    font-size: 1.5rem;
+    font-size: 1.6rem;
     color: var(--faint);
     transform: rotate(-3deg);
   }

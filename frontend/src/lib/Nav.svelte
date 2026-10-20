@@ -63,7 +63,7 @@
     min-width: 0;
     display: flex;
     flex-direction: column;
-    gap: 1.4rem;
+    gap: 1rem;
   }
   h1 {
     margin: 0;
@@ -102,7 +102,7 @@
     grid-template-columns: 2.3rem 1fr;
     align-items: baseline;
     width: 100%;
-    padding: 0.3rem 0;
+    padding: 0.2rem 0;
     border: 0;
     background: none;
     color: var(--graphite);
@@ -127,8 +127,8 @@
   .name {
     font-family: var(--display);
     font-style: italic;
-    font-size: 1.3rem;
-    line-height: 1.1;
+    font-size: 1.25rem;
+    line-height: 1.05;
   }
   .current .name {
     font-weight: 500;
@@ -170,6 +170,26 @@
   .studies :global(.scale) {
     width: 150px;
     margin-top: 0.8rem;
+  }
+  @media (max-height: 880px) {
+    .studies {
+      margin-top: 1rem;
+    }
+    .studies :global(.ball) {
+      width: 105px;
+    }
+    .studies :global(.scale) {
+      width: 110px;
+      margin-top: 0.4rem;
+    }
+    .scrawl {
+      font-size: 1.2rem;
+    }
+  }
+  @media (max-height: 800px) {
+    .studies {
+      display: none;
+    }
   }
   @media (max-width: 900px) {
     .side {

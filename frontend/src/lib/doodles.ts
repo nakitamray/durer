@@ -202,3 +202,89 @@ export function durerFrame(): Mark[] {
     gen.line(-10, 194, 250, 194, hatch(127, 3, { strokeWidth: 0.8 })),
   )
 }
+
+// a chess king worked out as stacked ellipses around a centre line, the
+// way you'd study any turned object before drawing it
+export function kingStudy(): Mark[] {
+  const cx = 160
+  const tilt = 0.26 // how open the ellipses are, from just above eye level
+  // the profile, top to bottom: height and radius at each section
+  const sections: [number, number][] = [
+    [78, 26],
+    [122, 16],
+    [130, 36],
+    [142, 34],
+    [156, 20],
+    [280, 30],
+    [292, 46],
+    [304, 44],
+    [318, 40],
+    [404, 84],
+    [414, 96],
+    [436, 96],
+  ]
+  const faint = (seed: number) => pen(seed, { strokeWidth: 0.5, roughness: 1.4 })
+  const out: Drawable[] = []
+  let seed = 300
+
+  // centre line and the guide lines running out past the silhouette
+  out.push(gen.line(cx, 0, cx, 470, faint(seed++)))
+  for (const [y, r] of sections.filter((_, i) => [0, 2, 6, 9, 11].includes(i))) {
+    out.push(gen.line(cx - r - 50, y, cx + r + 60, y, faint(seed++)))
+  }
+  // a measuring line down the side with ticks at each key height
+  out.push(gen.line(24, 40, 24, 440, pen(seed++, { strokeWidth: 0.7 })))
+  for (const [y] of sections.filter((_, i) => i % 2 === 0)) {
+    out.push(gen.line(18, y, 30, y, pen(seed++, { strokeWidth: 0.7 })))
+  }
+
+  // the cross on top
+  out.push(gen.rectangle(cx - 5, 22, 10, 44, pen(seed++)))
+  out.push(gen.rectangle(cx - 18, 34, 36, 10, pen(seed++)))
+
+  // an ellipse at every section, some boxed in with their diagonals
+  sections.forEach(([y, r], i) => {
+    const h = r * 2 * tilt
+    out.push(gen.ellipse(cx, y, r * 2, h, pen(seed++, { roughness: 1.2 })))
+    if (i === 2 || i === 6 || i === 10) {
+      out.push(gen.rectangle(cx - r, y - h / 2, r * 2, h, faint(seed++)))
+      out.push(gen.line(cx - r, y - h / 2, cx + r, y + h / 2, faint(seed++)))
+      out.push(gen.line(cx - r, y + h / 2, cx + r, y - h / 2, faint(seed++)))
+    }
+  })
+
+  // silhouette: join the ends of each section to the next
+  for (let i = 0; i < sections.length - 1; i++) {
+    const [y1, r1] = sections[i]
+    const [y2, r2] = sections[i + 1]
+    for (const side of [-1, 1]) {
+      if (i === 8) {
+        // the body flares out in a curve
+        const x1 = cx + side * r1
+        const x2 = cx + side * r2
+        out.push(gen.curve([[x1, y1], [cx + side * (r1 + 8), y1 + 50], [x2, y2]], pen(seed++, { strokeWidth: 1.3 })))
+      } else {
+        out.push(gen.line(cx + side * r1, y1, cx + side * r2, y2, pen(seed++, { strokeWidth: 1.3 })))
+      }
+    }
+  }
+
+  // the shadow side of the body and the base, hatched
+  out.push(
+    gen.polygon(
+      [
+        [cx + 12, 318],
+        [cx + 40, 318],
+        [cx + 50, 368],
+        [cx + 84, 404],
+        [cx + 96, 414],
+        [cx + 96, 436],
+        [cx + 40, 445],
+        [cx + 30, 404],
+      ],
+      hatch(seed++, 3.4, { stroke: 'none' }),
+    ),
+  )
+  out.push(gen.polygon([[cx + 8, 160], [cx + 20, 156], [cx + 30, 280], [cx + 14, 284]], hatch(seed++, 3, { stroke: 'none' })))
+  return marks(...out)
+}

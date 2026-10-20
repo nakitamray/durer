@@ -1,7 +1,7 @@
 <script lang="ts">
   import Desk from './lib/Desk.svelte'
   import Doodle from './lib/Doodle.svelte'
-  import { cube, durerFrame } from './lib/doodles'
+  import { durerFrame, kingStudy } from './lib/doodles'
   import Margin from './lib/Margin.svelte'
   import Nav from './lib/Nav.svelte'
   import Plate from './lib/Plate.svelte'
@@ -22,22 +22,14 @@
 
   $effect(() => {
     const step = studio.current
-    if (!studio.file) return
-    if (step === 'place' || step === 'big' || step === 'medium' || step === 'notan' || step === 'contour') {
-      studio.refreshBlockIn()
-    }
+    if (!studio.file || step === 'setup' || step === 'grid' || step === 'values') return
+    studio.refreshBlockIn()
   })
 
   $effect(() => {
-    if (studio.current !== 'big' || !studio.solids || !studio.file) return
-    void studio.simplicity
-    return debounce(() => studio.refreshShapes(), 200)
-  })
-
-  $effect(() => {
-    if (studio.current !== 'notan' || !studio.file) return
+    if (studio.current !== 'light' || !studio.file) return
     void studio.bias
-    return debounce(() => studio.refreshNotan(), 200)
+    return debounce(() => studio.refreshLight(), 200)
   })
 
   $effect(() => {
@@ -53,7 +45,7 @@
   })
 
   const frame = durerFrame()
-  const box = cube()
+  const king = kingStudy()
 
   // past the grid the photo fades back so the drawing on top can show
   let faded = false
@@ -78,7 +70,9 @@
       </section>
       <div class="notes">
         <Margin />
-        <button class="new" onclick={() => studio.reset()}>start over with a new picture</button>
+        <button class="new" onclick={() => studio.reset()}>
+          <span class="plus" aria-hidden="true">+</span> start a new drawing
+        </button>
       </div>
     {:else}
       <section class="intro">
@@ -95,8 +89,9 @@
           <p>his frame and threads</p>
         </div>
         <div class="aside right" aria-hidden="true">
-          <Doodle marks={box} viewBox="0 20 260 170" />
-          <p>big shapes first</p>
+          <p class="caption">the structure of a king</p>
+          <Doodle marks={king} viewBox="0 0 300 470" />
+          <p>stack the ellipses first</p>
         </div>
         {#if studio.error}<p class="error">{studio.error}</p>{/if}
       </section>
@@ -115,7 +110,7 @@
     display: grid;
     grid-template-columns: 220px minmax(0, 1fr);
     gap: 3rem;
-    min-height: calc(100vh - 3rem);
+    min-height: calc(100vh - 3.5rem);
   }
   main {
     display: grid;
@@ -150,36 +145,48 @@
     padding-top: 0.6rem;
   }
   .new {
-    margin-top: 2.5rem;
-    padding: 0;
-    border: 0;
-    background: none;
-    color: var(--faint);
-    font: inherit;
-    font-style: italic;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-top: 1rem;
+    padding: 0.45rem 1rem 0.35rem;
+    border: 1.5px solid var(--sanguine);
+    border-radius: 3px 6px 4px 5px;
+    background: rgb(138 50 24 / 0.08);
+    color: var(--sanguine);
+    font-family: var(--script);
+    font-size: 1.8rem;
     cursor: pointer;
+    transform: rotate(-0.8deg);
+    transition: background 0.15s;
   }
   .new:hover {
-    color: var(--sanguine);
+    background: rgb(138 50 24 / 0.18);
+  }
+  .plus {
+    font-family: var(--display);
+    font-size: 1.5rem;
+    line-height: 1;
   }
   .intro {
     position: relative;
-    max-width: 36rem;
-    margin: 4vh auto 0;
+    max-width: 34rem;
+    margin: 0 auto;
+    padding-top: max(1rem, calc(50vh - 22rem));
     text-align: center;
   }
   .about {
-    margin-top: 2.2rem;
+    margin-top: 1.6rem;
     color: var(--graphite);
     font-size: 1.1rem;
     line-height: 1.7;
   }
   .scribble {
     position: absolute;
-    top: 2rem;
-    left: -3rem;
+    top: calc(max(1rem, calc(50vh - 22rem)) + 2.5rem);
+    left: -3.5rem;
     margin: 0;
-    font-family: var(--hand);
+    font-family: var(--script);
     -webkit-text-stroke: 0.45px currentColor;
     font-size: 2.6rem;
     color: var(--sanguine);
@@ -198,25 +205,30 @@
     color: var(--graphite);
   }
   .aside.left {
-    top: 21rem;
-    right: calc(100% + 3rem);
+    top: calc(max(1rem, calc(50vh - 22rem)) + 23rem);
+    right: calc(100% + 2rem);
     transform: rotate(-3deg);
   }
   .aside.right {
-    top: 3rem;
-    left: calc(100% + 3rem);
-    transform: rotate(4deg);
+    top: 3.5rem;
+    left: calc(100% + 2.5rem);
+    width: min(300px, 24vw);
+    transform: rotate(2deg);
+  }
+  .aside.right .caption {
+    margin: 0 0 0.4rem 3rem;
+    font-size: 1.7rem;
   }
   .error {
     color: var(--sanguine);
     font-style: italic;
   }
   footer {
-    position: relative;
+    position: fixed;
     z-index: 1;
-    margin-top: 3rem;
-    text-align: right;
-    font-size: 0.9rem;
+    left: clamp(1.5rem, 4vw, 4rem);
+    bottom: 0.8rem;
+    font-size: 0.85rem;
   }
   footer a {
     color: var(--faint);
@@ -234,6 +246,10 @@
     .scribble,
     .aside {
       display: none;
+    }
+    footer {
+      position: static;
+      margin-top: 2rem;
     }
   }
 </style>
