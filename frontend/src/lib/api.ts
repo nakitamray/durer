@@ -1,4 +1,4 @@
-import type { BlockIn, ContourStudy, Grid, Notan, Paper, ShapeStudy, ValueStudy } from './types'
+import type { BlockIn, ContourStudy, Grid, LightDark, Paper, ValueStudy } from './types'
 
 const BASE = import.meta.env.VITE_API_URL || '/api'
 
@@ -38,18 +38,13 @@ export async function getGrid(file: File, paper: Paper, cols: number): Promise<G
   return res.json()
 }
 
-export async function getShapes(file: File, simplicity: number): Promise<ShapeStudy> {
-  const res = await post('/shapes', file, { simplicity })
-  return res.json()
-}
-
 export async function getBlockIn(file: File): Promise<BlockIn> {
   const res = await post('/blockin', file, {})
   return res.json()
 }
 
-export async function getNotan(file: File, bias: number): Promise<Notan> {
-  const res = await post('/notan', file, { bias })
+export async function getLight(file: File, bias: number): Promise<LightDark> {
+  const res = await post('/light', file, { bias })
   return res.json()
 }
 

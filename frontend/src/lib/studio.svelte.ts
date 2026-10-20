@@ -1,15 +1,6 @@
 import * as api from './api'
 import { PAPERS } from './papers'
-import type {
-  BlockIn,
-  Cell,
-  ContourStudy,
-  Grid,
-  Notan,
-  Paper,
-  ShapeStudy,
-  ValueStudy,
-} from './types'
+import type { BlockIn, Cell, ContourStudy, Grid, LightDark, Paper, ValueStudy } from './types'
 
 export const STEPS = [
   { key: 'setup', numeral: 'I', name: 'Mise en place', sub: 'the subject and paper' },
@@ -17,14 +8,15 @@ export const STEPS = [
   { key: 'place', numeral: 'III', name: "L'emplacement", sub: 'where it sits' },
   { key: 'big', numeral: 'IV', name: 'Grandes formes', sub: 'big shapes' },
   { key: 'medium', numeral: 'V', name: 'Formes moyennes', sub: 'medium shapes' },
-  { key: 'notan', numeral: 'VI', name: 'Le notan', sub: 'light and shadow' },
-  { key: 'contour', numeral: 'VII', name: 'Le contour', sub: 'the real lines' },
-  { key: 'values', numeral: 'VIII', name: 'Les valeurs', sub: 'modeling the tones' },
+  { key: 'small', numeral: 'VI', name: 'Petites formes', sub: 'small shapes' },
+  { key: 'light', numeral: 'VII', name: 'Ombre et lumière', sub: 'light and dark in each shape' },
+  { key: 'contour', numeral: 'VIII', name: 'Le contour', sub: 'the real lines' },
+  { key: 'values', numeral: 'IX', name: 'Les valeurs', sub: 'modeling the tones' },
 ] as const
 
 export type StepKey = (typeof STEPS)[number]['key']
 
-type Job = 'grid' | 'blockin' | 'shapes' | 'notan' | 'contour' | 'values'
+type Job = 'grid' | 'blockin' | 'light' | 'contour' | 'values'
 
 class Studio {
   file = $state<File | null>(null)
@@ -43,13 +35,10 @@ class Studio {
   cell = $state<Cell | null>(null)
 
   blockin = $state<BlockIn | null>(null)
-  solids = $state(false)
-  simplicity = $state(3)
-  shapes = $state<ShapeStudy | null>(null)
 
   bias = $state(3)
   hatched = $state(true)
-  notan = $state<Notan | null>(null)
+  light = $state<LightDark | null>(null)
 
   detail = $state(3)
   contour = $state<ContourStudy | null>(null)
@@ -66,8 +55,7 @@ class Studio {
   private latest: Record<Job, number> = {
     grid: 0,
     blockin: 0,
-    shapes: 0,
-    notan: 0,
+    light: 0,
     contour: 0,
     values: 0,
   }
@@ -103,7 +91,7 @@ class Studio {
     if (this.src) URL.revokeObjectURL(this.src)
     this.src = null
     this.grid = this.cell = null
-    this.blockin = this.shapes = this.notan = this.contour = this.values = null
+    this.blockin = this.light = this.contour = this.values = null
     this.keys = {}
     this.error = null
     // anything still in flight belongs to the old image
@@ -137,18 +125,15 @@ class Studio {
     })
   }
 
-  refreshShapes() {
-    return this.fetch('shapes', `${this.simplicity}`, async (f) => {
-      const s = await api.getShapes(f, this.simplicity)
-      return () => (this.shapes = s)
+  refreshLight() {
+    return this.fetch('light', `${this.bias}`, async (f) => {
+      const l = await api.getLight(f, this.bias)
+      return () => (this.light = l)
     })
   }
 
-  refreshNotan() {
-    return this.fetch('notan', `${this.bias}`, async (f) => {
-      const n = await api.getNotan(f, this.bias)
-      return () => (this.notan = n)
-    })
+  next() {
+    if (this.step < STEPS.length - 1) this.step++
   }
 
   refreshContour() {

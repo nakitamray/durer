@@ -37,26 +37,6 @@ export interface Cell {
   row: number
 }
 
-export interface Shape {
-  kind: 'ellipse' | 'box' | 'triangle' | 'polygon'
-  fit: number
-  share: number
-  center: [number, number]
-  points?: [number, number][]
-  cx?: number
-  cy?: number
-  rx?: number
-  ry?: number
-  angle?: number
-}
-
-export interface ShapeStudy {
-  width: number
-  height: number
-  drawing: boolean
-  shapes: Shape[]
-}
-
 export type Point = [number, number]
 
 export interface InkStroke {
@@ -86,11 +66,13 @@ export interface BlockIn {
   placement: Placement
   big: Point[][]
   medium: Point[][]
+  small: Point[][]
 }
 
-export interface Notan {
+export interface LightDark {
   width: number
   height: number
   path: string
+  turns: Point[][]
   shadow: number
 }

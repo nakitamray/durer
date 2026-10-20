@@ -19,7 +19,7 @@
     const step = studio.current
     const raster = step === 'values' ? studio.values?.image : null
     const contour = step === 'contour' ? studio.contour : null
-    const notan = step === 'notan' ? studio.notan : null
+    const notan = step === 'light' ? studio.light : null
     const refOpacity = step === 'grid' ? 1 : studio.refOpacity
     if (!g || !cell || !src || !el) return
 
@@ -121,7 +121,7 @@
   }
   .note,
   .empty {
-    font-family: var(--hand);
+    font-family: var(--script);
     -webkit-text-stroke: 0.45px currentColor;
     color: var(--graphite);
     font-size: 1.6rem;

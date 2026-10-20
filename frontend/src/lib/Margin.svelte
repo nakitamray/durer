@@ -3,8 +3,7 @@
   import ToneKey from './ToneKey.svelte'
   import { length, percent } from './format'
   import { PAPERS } from './papers'
-  import { describe } from './shapes'
-  import { studio } from './studio.svelte'
+  import { STEPS, studio } from './studio.svelte'
 
   const g = $derived(studio.grid)
   const b = $derived(studio.blockin)
@@ -12,8 +11,8 @@
   const paperIndex = $derived(PAPERS.findIndex((p) => p.label === studio.paper.label))
 
   const DETAIL = ['very loose', 'loose', 'balanced', 'detailed', 'every line']
-  const SIMPLICITY = ['lots of pieces', 'more pieces', 'balanced', 'fewer pieces', 'just the masses']
   const BIAS = ['mostly light', 'lighter', 'balanced', 'darker', 'mostly shadow']
+  const upNext = $derived(STEPS[studio.step + 1])
 
   // where the subject lands on the paper and in the grid
   const where = $derived.by(() => {
@@ -37,7 +36,7 @@
           : `tips ${Math.round(Math.abs(lean))}° with the top to the ${lean > 0 ? 'left' : 'right'}`,
     }
   })
-  const bigCount = $derived(b ? b.big.reduce((n, p) => n + p.length, 0) : 0)
+  const count = (lines: [number, number][][]) => lines.reduce((n, p) => n + p.length - 1, 0)
 </script>
 
 {#snippet referenceControls()}
@@ -76,7 +75,9 @@
       Pick the sheet you're actually going to draw on. Every measurement after this is in real
       inches or centimetres on that paper.
     </p>
-    <button class="next" onclick={() => (studio.step = 1)}>On to the grid →</button>
+    <button class="next" onclick={() => studio.next()}>
+      <span class="numeral">II</span> on to the grid →
+    </button>
   {:else if step === 'grid'}
     <h2>The grid</h2>
     <label class="field">
@@ -114,54 +115,45 @@
     {@render referenceControls()}
   {:else if step === 'big'}
     <h2>Big shapes</h2>
-    <div class="toggle" role="radiogroup" aria-label="how to show the big shapes">
-      <button class:on={!studio.solids} onclick={() => (studio.solids = false)}>straight lines</button>
-      <button class:on={studio.solids} onclick={() => (studio.solids = true)}>simple solids</button>
-    </div>
-    {#if studio.solids}
-      <label class="field">
-        <span>Simplicity <i>{SIMPLICITY[studio.simplicity - 1]}</i></span>
-        <input type="range" min="1" max="5" bind:value={studio.simplicity} />
-      </label>
-      {#if studio.shapes}
-        <ol class="shapes">
-          {#each studio.shapes.shapes.slice(0, 8) as s, i}
-            <li><span class="n">{i + 1}</span>{describe(s)}<span class="share">{percent(s.share)}</span></li>
-          {/each}
-        </ol>
-      {/if}
-      <p class="tip">The same subject as a few solids. Biggest first.</p>
-    {:else}
-      {#if b}<p class="note">the whole thing in {bigCount} straight lines</p>{/if}
-      <p class="tip">
-        Wrap the subject in as few straight lines as you can, like a box that fits it. Let the lines
-        run long past the corners. Don't curve anything yet.
-      </p>
-    {/if}
+    {#if b}<p class="note">{count(b.big)} straight lines</p>{/if}
+    <p class="tip">
+      Find the few biggest masses (sky and ground, the object and what's behind it) and draw only
+      the borders between them, as long straight lines. Let the lines run past the corners. Nothing
+      curved yet.
+    </p>
     {@render referenceControls()}
   {:else if step === 'medium'}
     <h2>Medium shapes</h2>
+    {#if b}<p class="note">{count(b.medium)} lines, the darker ones are new</p>{/if}
     <p class="tip">
-      Break each big line into two or three shorter ones, still straight. Add the shapes of the main
-      shadows inside, as flat angled planes. Check every angle against the grid.
+      Split each big shape into the next layer down: the parts of the object, the shapes of the
+      shadows. Still straight lines, just shorter. Check every angle against the grid.
     </p>
     {@render referenceControls()}
-  {:else if step === 'notan'}
-    <h2>Notan</h2>
+  {:else if step === 'small'}
+    <h2>Small shapes</h2>
+    {#if b}<p class="note">{count(b.small)} lines</p>{/if}
+    <p class="tip">
+      One more layer of the same thing. Every small shape sits inside a medium one, so you're only
+      ever adding lines, never moving the ones you have.
+    </p>
+    {@render referenceControls()}
+  {:else if step === 'light'}
+    <h2>Light and dark</h2>
     <label class="field">
       <span>Split <i>{BIAS[studio.bias - 1]}</i></span>
       <input type="range" min="1" max="5" bind:value={studio.bias} />
     </label>
-    {#if studio.notan}
-      <p class="note">{percent(studio.notan.shadow)} of the picture is in shadow</p>
+    {#if studio.light}
+      <p class="note">{percent(studio.light.shadow)} of the picture is in shadow</p>
     {/if}
     <div class="toggle">
       <button class:on={studio.hatched} onclick={() => (studio.hatched = true)}>hatched</button>
       <button class:on={!studio.hatched} onclick={() => (studio.hatched = false)}>solid</button>
     </div>
     <p class="tip">
-      Only two values: light and shadow. Fill every shadow shape with one flat even tone. If the
-      picture still reads at this stage, the rest is polish.
+      Go shape by shape and ask which part faces the light and which turns away. Draw the line where
+      it turns, then fill the dark side with one flat, even tone. Only two values for now.
     </p>
     {@render referenceControls()}
     <CellView />
@@ -207,6 +199,12 @@
   {#if studio.error}
     <p class="error">{studio.error}</p>
   {/if}
+
+  {#if upNext && step !== 'setup'}
+    <button class="next" onclick={() => studio.next()}>
+      <span class="numeral">{upNext.numeral}</span> {upNext.sub} →
+    </button>
+  {/if}
 </aside>
 
 <style>
@@ -239,7 +237,7 @@
     color: var(--ink);
   }
   .field i {
-    font-family: var(--hand);
+    font-family: var(--script);
     -webkit-text-stroke: 0.45px currentColor;
     font-style: normal;
     font-size: 1.6rem;
@@ -256,7 +254,7 @@
     gap: 0.35rem;
   }
   .note {
-    font-family: var(--hand);
+    font-family: var(--script);
     -webkit-text-stroke: 0.45px currentColor;
     font-size: 1.85rem;
     line-height: 1.25;
@@ -300,8 +298,11 @@
     text-decoration-color: var(--sanguine);
   }
   .next {
-    margin-top: 0.5rem;
-    padding: 0.5rem 1.1rem;
+    display: block;
+    width: 100%;
+    margin-top: 1.6rem;
+    padding: 0.6rem 1.1rem;
+    text-align: left;
     border: 1px solid var(--ink);
     border-radius: 2px;
     background: transparent;
@@ -314,6 +315,12 @@
   .next:hover {
     background: var(--ink);
     color: var(--sheet);
+  }
+  .next .numeral {
+    font-style: normal;
+    font-size: 0.9rem;
+    letter-spacing: 0.06em;
+    margin-right: 0.3rem;
   }
   .toggle {
     display: flex;
@@ -334,27 +341,6 @@
     border-color: var(--ink);
     color: var(--ink);
     background: rgb(255 255 255 / 0.12);
-  }
-  .shapes {
-    list-style: none;
-    margin: 0 0 1rem;
-    padding: 0;
-  }
-  .shapes li {
-    display: grid;
-    grid-template-columns: 1.8rem 1fr auto;
-    padding: 0.25rem 0;
-    border-bottom: 1px solid var(--rule);
-  }
-  .shapes .n {
-    font-family: var(--hand);
-    -webkit-text-stroke: 0.45px currentColor;
-    font-size: 1.2rem;
-    color: var(--sanguine);
-  }
-  .shapes .share {
-    color: var(--graphite);
-    font-size: 0.85rem;
   }
   .error {
     color: var(--sanguine);
