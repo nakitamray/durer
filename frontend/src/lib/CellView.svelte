@@ -122,9 +122,8 @@
   .note,
   .empty {
     font-family: var(--script);
-    -webkit-text-stroke: 0.45px currentColor;
     color: var(--graphite);
-    font-size: 1.6rem;
+    font-size: 1.35rem;
     line-height: 1.3;
   }
   .empty {

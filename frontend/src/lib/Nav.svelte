@@ -1,6 +1,6 @@
 <script lang="ts">
   import Doodle from './Doodle.svelte'
-  import { sphere, valueScale } from './doodles'
+  import { durerFrame, valueScale } from './doodles'
   import { line, path } from './sketch'
   import { studio, STEPS } from './studio.svelte'
 
@@ -14,7 +14,7 @@
     ...line(26, 8, 20, 13, { seed: 33, width: 1.4 }),
   ]
 
-  const ball = sphere()
+  const frame = durerFrame()
   const scale = valueScale()
 </script>
 
@@ -51,8 +51,8 @@
   </nav>
 
   <div class="studies" aria-hidden="true">
-    <Doodle marks={ball} viewBox="0 0 230 175" class="ball" />
-    <p class="scrawl">light from the left</p>
+    <Doodle marks={frame} viewBox="-10 0 250 200" class="frame" />
+    <p class="scrawl">his frame and threads</p>
     <Doodle marks={scale} viewBox="0 0 230 46" class="scale" />
   </div>
 </aside>
@@ -152,15 +152,13 @@
     margin-top: 1.6rem;
     opacity: 0.8;
   }
-  .studies :global(.ball) {
+  .studies :global(.frame) {
     width: 150px;
   }
   .scrawl {
-    position: absolute;
-    top: -1.2rem;
-    left: 2.4rem;
+    margin: 0.1rem 0 0 0.6rem;
     white-space: nowrap;
-    margin: 0;
+    transform: rotate(-3deg);
     font-family: var(--hand);
     -webkit-text-stroke: 0.45px currentColor;
     font-size: 1.45rem;
@@ -175,12 +173,12 @@
     .studies {
       margin-top: 1rem;
     }
-    .studies :global(.ball) {
+    .studies :global(.frame) {
       width: 105px;
     }
     .studies :global(.scale) {
       width: 110px;
-      margin-top: 0.4rem;
+      margin-top: 0.7rem;
     }
     .scrawl {
       font-size: 1.2rem;

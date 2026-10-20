@@ -232,7 +232,7 @@
     position: absolute;
     z-index: 3;
     font-family: var(--script);
-    font-size: 1.7rem;
+    font-size: 1.4rem;
     white-space: nowrap;
     color: var(--sanguine);
     text-shadow:

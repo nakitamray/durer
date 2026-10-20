@@ -1,12 +1,19 @@
 <script lang="ts">
   import Desk from './lib/Desk.svelte'
   import Doodle from './lib/Doodle.svelte'
-  import { durerFrame, kingStudy } from './lib/doodles'
+  import { kingStudy, sphere } from './lib/doodles'
   import Margin from './lib/Margin.svelte'
   import Nav from './lib/Nav.svelte'
   import Plate from './lib/Plate.svelte'
   import Upload from './lib/Upload.svelte'
+  import { healthy, OFFLINE } from './lib/api'
   import { studio } from './lib/studio.svelte'
+
+  // say so up front if the api isn't running, instead of after an upload fails
+  let offline = $state(false)
+  $effect(() => {
+    healthy().then((ok) => (offline = !ok))
+  })
 
   function debounce(fn: () => void, ms: number) {
     const t = setTimeout(fn, ms)
@@ -44,7 +51,7 @@
     return debounce(() => studio.refreshValues(), 200)
   })
 
-  const frame = durerFrame()
+  const ball = sphere()
   const king = kingStudy()
 
   // past the grid the photo fades back so the drawing on top can show
@@ -76,24 +83,32 @@
       </div>
     {:else}
       <section class="intro">
-        <Upload />
-        <p class="about">
-          The grid method is how Albrecht Dürer taught drawing in 1525, looking at his subject
-          through a frame strung with threads. Break a picture into squares, block in the big shapes,
-          then the shadows, then the lines, then the tones. Every step is the one before it with a
-          little more detail.
-        </p>
-        <p class="scribble">start here</p>
-        <div class="aside left" aria-hidden="true">
-          <Doodle marks={frame} viewBox="-10 0 250 200" />
-          <p>his frame and threads</p>
+        <div class="flank left" aria-hidden="true">
+          <p class="caption">light from the left</p>
+          <Doodle marks={ball} viewBox="0 0 230 175" />
+          <p>core shadow, then cast shadow</p>
         </div>
-        <div class="aside right" aria-hidden="true">
+
+        <div class="center">
+          <Upload />
+          {#if offline}
+            <p class="error">{OFFLINE}</p>
+          {:else if studio.error}
+            <p class="error">{studio.error}</p>
+          {/if}
+          <p class="about">
+            The grid method is how Albrecht Dürer taught drawing in 1525, looking at his subject
+            through a frame strung with threads. Break a picture into squares, block in the big
+            shapes, then the shadows, then the lines, then the tones. Every step is the one before it
+            with a little more detail.
+          </p>
+        </div>
+
+        <div class="flank right" aria-hidden="true">
           <p class="caption">the structure of a king</p>
           <Doodle marks={king} viewBox="0 0 300 470" />
           <p>stack the ellipses first</p>
         </div>
-        {#if studio.error}<p class="error">{studio.error}</p>{/if}
       </section>
     {/if}
   </main>
@@ -155,7 +170,7 @@
     background: rgb(138 50 24 / 0.08);
     color: var(--sanguine);
     font-family: var(--script);
-    font-size: 1.8rem;
+    font-size: 1.5rem;
     cursor: pointer;
     transform: rotate(-0.8deg);
     transition: background 0.15s;
@@ -169,57 +184,52 @@
     line-height: 1;
   }
   .intro {
-    position: relative;
-    max-width: 34rem;
-    margin: 0 auto;
-    padding-top: max(1rem, calc(50vh - 22rem));
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+    align-items: center;
+    gap: 1.5rem;
+    min-height: calc(100vh - 4rem);
+  }
+  .center {
+    grid-column: 2;
     text-align: center;
   }
   .about {
-    margin-top: 1.6rem;
+    max-width: 34rem;
+    margin: 1.2rem auto 0;
     color: var(--graphite);
-    font-size: 1.1rem;
-    line-height: 1.7;
+    font-size: 1.08rem;
+    line-height: 1.65;
   }
-  .scribble {
-    position: absolute;
-    top: calc(max(1rem, calc(50vh - 22rem)) + 2.5rem);
-    left: -3.5rem;
-    margin: 0;
-    font-family: var(--script);
-    -webkit-text-stroke: 0.45px currentColor;
-    font-size: 2.6rem;
-    color: var(--sanguine);
-    transform: rotate(-14deg);
-  }
-  .aside {
-    position: absolute;
-    width: 200px;
+  .flank {
     opacity: 0.85;
   }
-  .aside p {
+  .flank p {
     margin: 0.2rem 0 0;
     font-family: var(--hand);
     -webkit-text-stroke: 0.45px currentColor;
     font-size: 1.5rem;
     color: var(--graphite);
+    text-align: center;
   }
-  .aside.left {
-    top: calc(max(1rem, calc(50vh - 22rem)) + 23rem);
-    right: calc(100% + 2rem);
-    transform: rotate(-3deg);
-  }
-  .aside.right {
-    top: 3.5rem;
-    left: calc(100% + 2.5rem);
-    width: min(300px, 24vw);
-    transform: rotate(2deg);
-  }
-  .aside.right .caption {
-    margin: 0 0 0.4rem 3rem;
+  .flank .caption {
+    margin-bottom: 0.4rem;
     font-size: 1.7rem;
   }
+  .flank.left {
+    justify-self: center;
+    width: min(190px, 13vw);
+    transform: rotate(-3deg);
+  }
+  .flank.right {
+    grid-column: 3;
+    justify-self: center;
+    width: min(250px, 16vw);
+    transform: rotate(2deg);
+  }
   .error {
+    max-width: 30rem;
+    margin: 0.8rem auto 0;
     color: var(--sanguine);
     font-style: italic;
   }
@@ -233,6 +243,19 @@
   footer a {
     color: var(--faint);
   }
+  /* not enough room for a doodle on both sides: keep the bigger one */
+  @media (max-width: 1500px) {
+    .intro {
+      grid-template-columns: 0 auto minmax(0, 1fr);
+      gap: 0 1rem;
+    }
+    .flank.left {
+      display: none;
+    }
+    .flank.right {
+      width: min(230px, 100%);
+    }
+  }
   @media (max-width: 1180px) {
     main {
       grid-template-columns: minmax(0, 1fr);
@@ -243,9 +266,12 @@
       grid-template-columns: minmax(0, 1fr);
       gap: 1.5rem;
     }
-    .scribble,
-    .aside {
+    .flank {
       display: none;
+    }
+    .intro {
+      display: block;
+      min-height: 0;
     }
     footer {
       position: static;

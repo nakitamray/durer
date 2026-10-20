@@ -238,9 +238,8 @@
   }
   .field i {
     font-family: var(--script);
-    -webkit-text-stroke: 0.45px currentColor;
     font-style: normal;
-    font-size: 1.6rem;
+    font-size: 1.3rem;
     color: var(--sanguine);
   }
   .checks {
@@ -255,15 +254,14 @@
   }
   .note {
     font-family: var(--script);
-    -webkit-text-stroke: 0.45px currentColor;
-    font-size: 1.85rem;
+    font-size: 1.55rem;
     line-height: 1.25;
     color: var(--sanguine);
     transform: rotate(-1.5deg);
     transform-origin: left;
   }
   .note.big {
-    font-size: 2.3rem;
+    font-size: 1.9rem;
   }
   .facts {
     margin: 0 0 1rem;
