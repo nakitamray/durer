@@ -6,6 +6,12 @@
   font-display: swap;
 }
 
+@font-face {
+  font-family: 'Tritopani';
+  src: url('/fonts/tritopani.woff2') format('woff2');
+  font-display: swap;
+}
+
 :root {
   --page: #bf9b73;
   --sheet: #efe5d2;
@@ -18,7 +24,10 @@
 
   --display: 'Cormorant Garamond', Georgia, serif;
   --body: 'EB Garamond', Georgia, serif;
-  --hand: 'Xanas', 'La Belle Aurore', cursive;
+  /* doodle captions */
+  --hand: 'Xanas', 'Tritopani', cursive;
+  /* handwriting that has to be read: instructions, measurements */
+  --script: 'Tritopani', 'La Belle Aurore', cursive;
 
   color-scheme: light;
 }
@@ -65,6 +74,27 @@ select {
   background: rgb(255 255 255 / 0.25);
   color: var(--ink);
   font: inherit;
+}
+
+/* a thin, see-through scrollbar the color of a darker patch of the paper */
+html {
+  overflow-x: clip;
+  scrollbar-width: thin;
+  scrollbar-color: rgb(90 55 25 / 0.35) transparent;
+}
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: rgb(90 55 25 / 0.35);
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgb(90 55 25 / 0.55);
 }
 
 ::selection {
