@@ -4,12 +4,13 @@ import cv2
 import numpy as np
 from sklearn.cluster import KMeans
 
-# darkest -> lightest
+# darkest -> lightest. the lightest group is left as bare paper
 GRADES = {
-    3: ["4B", "HB", "2H"],
-    4: ["6B", "2B", "HB", "2H"],
-    5: ["6B", "4B", "2B", "HB", "2H"],
+    3: ["4B", "HB", "paper"],
+    4: ["6B", "2B", "HB", "paper"],
+    5: ["6B", "4B", "2B", "HB", "paper"],
 }
+PAPER_GRAY = 245
 
 SAMPLE_SIZE = 20_000
 
@@ -28,9 +29,9 @@ def value_study(img: np.ndarray, levels: int = 4, seed: int = 0):
 
     km = KMeans(n_clusters=levels, n_init=4, random_state=seed).fit(sample)
     centers = np.sort(km.cluster_centers_.ravel())
-
-    # nearest center for every pixel (1-D, so no need for km.predict)
+    # nearest center for every pixel, computed before the paper tone is brightened
     idx = np.abs(flat - centers[None, :]).argmin(axis=1)
+    centers[-1] = max(centers[-1], PAPER_GRAY)
     poster = centers[idx].reshape(gray.shape).astype(np.uint8)
 
     counts = np.bincount(idx, minlength=levels)

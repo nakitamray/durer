@@ -22,7 +22,7 @@ def test_line_drawing_rejects_bad_detail(sample_image):
 def test_value_study_three_tones(sample_image):
     poster, tones = value_study(sample_image, levels=3)
     assert poster.shape == (300, 400)
-    assert [t["grade"] for t in tones] == ["4B", "HB", "2H"]
+    assert [t["grade"] for t in tones] == ["4B", "HB", "paper"]
     grays = [t["gray"] for t in tones]
     assert grays == sorted(grays)
     assert sum(t["coverage"] for t in tones) == pytest.approx(1, abs=0.01)
