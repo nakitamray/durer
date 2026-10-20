@@ -1,16 +1,24 @@
+@font-face {
+  /* only the plain letters are kept; digits and punctuation fall through to the next font */
+  font-family: 'Xanas';
+  src: url('/fonts/xanas-groom.woff2') format('woff2');
+  unicode-range: U+0020, U+0041-005A, U+0061-007A;
+  font-display: swap;
+}
+
 :root {
-  --paper: #f3ede1;
-  --paper-light: #f7f2e8;
-  --ink: #2f2b27;
-  --graphite: #5e5850;
-  --faint: #a39b8e;
-  --rule: #d9cfbd;
-  --grid-line: rgb(120 70 50 / 0.55);
-  --sanguine: #a4553a;
+  --page: #bf9b73;
+  --sheet: #efe5d2;
+  --ink: #22160d;
+  --graphite: #45311f;
+  --faint: #765b40;
+  --rule: rgb(34 22 13 / 0.28);
+  --grid-line: rgb(110 35 15 / 0.6);
+  --sanguine: #8a3218;
 
   --display: 'Cormorant Garamond', Georgia, serif;
   --body: 'EB Garamond', Georgia, serif;
-  --hand: 'La Belle Aurore', cursive;
+  --hand: 'Xanas', 'La Belle Aurore', cursive;
 
   color-scheme: light;
 }
@@ -20,16 +28,24 @@
 }
 
 html {
-  background-color: var(--paper);
-  /* a bit of tooth, like drawing paper */
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='240' height='240'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0.35 0 0 0 0 0.28 0 0 0 0 0.2 0 0 0 0.09 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  min-height: 100%;
+  background-color: var(--page);
+  /* toned paper: uneven blotches of brown, a bit of grain, darker toward the edges */
+  background-image:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0.2 0 0 0 0 0.12 0 0 0 0 0.05 0 0 0 0.16 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='900' height='900'%3E%3Cfilter id='b'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.004' numOctaves='4' seed='7'/%3E%3CfeColorMatrix values='0 0 0 0 0.3 0 0 0 0 0.18 0 0 0 0 0.08 0 0 0 -2.2 1.35'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23b)'/%3E%3C/svg%3E"),
+    radial-gradient(ellipse at 18% 12%, rgb(232 204 160 / 0.55), transparent 45%),
+    radial-gradient(ellipse at 78% 70%, rgb(222 192 148 / 0.4), transparent 50%),
+    radial-gradient(ellipse at 50% 50%, transparent 55%, rgb(70 40 15 / 0.45) 100%);
+  background-size: 300px 300px, 100% 100%, auto, auto, auto;
+  background-attachment: fixed;
 }
 
 body {
-  margin: 0 auto;
-  max-width: 1180px;
+  overflow-x: clip;
+  margin: 0;
   min-height: 100vh;
-  padding: 2.5rem clamp(1rem, 4vw, 3rem) 2rem;
+  padding: 2rem clamp(1rem, 3vw, 3rem) 1.5rem clamp(1.5rem, 4vw, 4rem);
   font-family: var(--body);
   font-size: 17px;
   color: var(--ink);
@@ -37,7 +53,8 @@ body {
 }
 
 select,
-input[type='range'] {
+input[type='range'],
+input[type='checkbox'] {
   accent-color: var(--sanguine);
 }
 
@@ -45,9 +62,13 @@ select {
   padding: 0.35rem 0.4rem;
   border: 1px solid var(--rule);
   border-radius: 2px;
-  background: var(--paper-light);
+  background: rgb(255 255 255 / 0.25);
   color: var(--ink);
   font: inherit;
+}
+
+::selection {
+  background: rgb(138 50 24 / 0.3);
 }
 
 :focus-visible {
