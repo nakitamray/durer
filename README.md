@@ -71,7 +71,7 @@ npm install
 npm run dev
 ```
 
-After the first setup, `.\dev.ps1` from the repo root opens both in their own windows.
+Or skip all of that: `.\dev.ps1` from the repo root makes the Python environment if it's missing, installs whatever's new in both halves, and opens the API and the app in their own windows. It's safe to run after every pull.
 
 ### macOS / Linux
 
@@ -119,7 +119,7 @@ CI runs both, plus a Docker build, on every push.
 
 ## Fonts
 
-Headings are Cormorant Garamond and body text is EB Garamond. Handwriting that needs to be read (instructions, measurements) is Tritopani by Ergibi Studio. The doodle captions are Xanas Wedding (Groom) by Pedro Teixeira Foundry. Its demo version only has clean plain letters, so that's all the web font includes, and digits and punctuation fall back to Tritopani. Both are demo fonts for personal use.
+Headings are Cormorant Garamond and body text is EB Garamond. Handwriting that needs to be read (instructions, measurements) is Caveat. The doodle captions are Xanas Wedding (Groom) by Pedro Teixeira Foundry. Its demo version only has clean plain letters, so that's all the web font includes, and digits and punctuation fall back to Caveat. Xanas is a demo font for personal use.
 
 ## Next up
 
