@@ -99,7 +99,8 @@
   .note {
     margin-top: 0.6rem;
     font-family: var(--hand);
-    font-size: 1.15rem;
+    -webkit-text-stroke: 0.45px currentColor;
+    font-size: 1.5rem;
     color: var(--faint);
     transform: rotate(-3deg);
   }

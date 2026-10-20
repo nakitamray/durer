@@ -54,6 +54,7 @@
   }
   .order {
     font-family: var(--hand);
+    -webkit-text-stroke: 0.45px currentColor;
     color: var(--sanguine);
     font-size: 1.1rem;
   }
