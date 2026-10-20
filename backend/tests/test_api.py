@@ -35,8 +35,8 @@ def test_blockin(sample_png):
     assert body["big"]
 
 
-def test_notan(sample_png):
-    r = post("/notan", sample_png, bias=3)
+def test_light(sample_png):
+    r = post("/light", sample_png, bias=3)
     assert r.status_code == 200
     assert 0 <= r.json()["shadow"] <= 1
 
@@ -63,11 +63,3 @@ def test_not_an_image():
 def test_bad_params(sample_png):
     r = post("/grid", sample_png, cols=0)
     assert r.status_code == 422
-
-
-def test_shapes(sample_png):
-    r = post("/shapes", sample_png, simplicity=3)
-    assert r.status_code == 200
-    body = r.json()
-    assert body["width"] > 0
-    assert isinstance(body["shapes"], list)

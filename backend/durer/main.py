@@ -5,7 +5,7 @@ from fastapi import FastAPI, File, Form, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import Response
 
-from . import blockin, contour, grid, imaging, pdf, shapes, values
+from . import blockin, contour, grid, imaging, pdf, values
 
 app = FastAPI(title="durer")
 
@@ -57,20 +57,11 @@ async def make_blockin(image: UploadFile = File(...)):
     return blockin.block_in(img)
 
 
-@app.post("/notan")
-async def make_notan(image: UploadFile = File(...), bias: int = Form(3)):
+@app.post("/light")
+async def make_light(image: UploadFile = File(...), bias: int = Form(3)):
     img = await read_image(image)
     try:
-        return blockin.notan(img, bias)
-    except ValueError as e:
-        raise HTTPException(422, str(e)) from e
-
-
-@app.post("/shapes")
-async def make_shapes(image: UploadFile = File(...), simplicity: int = Form(3)):
-    img = await read_image(image)
-    try:
-        return shapes.find_shapes(img, simplicity)
+        return blockin.light_and_dark(img, bias)
     except ValueError as e:
         raise HTTPException(422, str(e)) from e
 
